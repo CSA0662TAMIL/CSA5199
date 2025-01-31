@@ -1,0 +1,48 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_LEN 100
+
+// Function to encrypt text using Caesar Cipher
+void encrypt(char *text, int shift) {
+    for (int i = 0; text[i] != '\0'; i++) {
+        char ch = text[i];
+
+        if (isalpha(ch)) { // Check if it's a letter
+            char base = isupper(ch) ? 'A' : 'a';
+            text[i] = (ch - base + shift) % 26 + base; // Shift within bounds
+        }
+    }
+}
+
+// Function to decrypt text using Caesar Cipher
+void decrypt(char *text, int shift) {
+    encrypt(text, 26 - shift); // Reverse shift for decryption
+}
+
+int main() {
+    char message[MAX_LEN];
+    int shift;
+
+    // Get user input
+    printf("Enter a message: ");
+    fgets(message, MAX_LEN, stdin);
+    message[strcspn(message, "\n")] = '\0'; // Remove trailing newline
+
+    // Get shift value
+    do {
+        printf("Enter shift value (1-25): ");
+        scanf("%d", &shift);
+    } while (shift < 1 || shift > 25);
+
+    // Encrypt and display result
+    encrypt(message, shift);
+    printf("Encrypted message: %s\n", message);
+
+    // Decrypt and display result
+    decrypt(message, shift);
+    printf("Decrypted message: %s\n", message);
+
+    return 0;
+}
