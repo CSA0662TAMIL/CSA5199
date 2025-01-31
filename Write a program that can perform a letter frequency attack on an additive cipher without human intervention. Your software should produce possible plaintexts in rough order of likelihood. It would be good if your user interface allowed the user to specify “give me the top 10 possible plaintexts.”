@@ -1,0 +1,101 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+#define MAX_LEN 1000
+#define ALPHA 26
+
+// English letter frequency (relative frequencies from a large corpus)
+double letter_freq[ALPHA] = {
+    8.167, 1.492, 2.782, 4.253, 12.702, 2.228, 2.015, 6.094, 6.966, 0.153,
+    0.772, 4.025, 2.406, 6.749, 7.507, 1.929, 0.095, 5.987, 6.327, 9.056,
+    2.758, 0.978, 2.360, 0.150, 1.974, 0.074
+};
+
+// Structure to hold shift and score for sorting
+typedef struct {
+    int shift;
+    double score;
+    char plaintext[MAX_LEN];
+} DecryptionResult;
+
+// Function to decrypt a given text with a shift
+void decrypt(char *ciphertext, int shift, char *plaintext) {
+    for (int i = 0; ciphertext[i] != '\0'; i++) {
+        char ch = ciphertext[i];
+
+        if (isalpha(ch)) {
+            char base = isupper(ch) ? 'A' : 'a';
+            plaintext[i] = (ch - base - shift + ALPHA) % ALPHA + base;
+        } else {
+            plaintext[i] = ch;  // Preserve non-alphabetic characters
+        }
+    }
+    plaintext[strlen(ciphertext)] = '\0'; // Null-terminate the string
+}
+
+// Function to calculate the likelihood score based on letter frequency analysis
+double calculate_score(char *text) {
+    double score = 0;
+    int letter_count[ALPHA] = {0};
+    int total_letters = 0;
+
+    // Count letter occurrences
+    for (int i = 0; text[i] != '\0'; i++) {
+        if (isalpha(text[i])) {
+            letter_count[tolower(text[i]) - 'a']++;
+            total_letters++;
+        }
+    }
+
+    // Compute score using expected frequency
+    if (total_letters > 0) {
+        for (int i = 0; i < ALPHA; i++) {
+            double freq = (double) letter_count[i] / total_letters * 100;
+            score += freq * letter_freq[i];  // Weighted match
+        }
+    }
+    
+    return score;
+}
+
+// Function to compare results for sorting in descending order
+int compare(const void *a, const void *b) {
+    double diff = ((DecryptionResult *)b)->score - ((DecryptionResult *)a)->score;
+    return (diff > 0) - (diff < 0);
+}
+
+int main() {
+    char ciphertext[MAX_LEN];
+    int top_n;
+    
+    // Get user input
+    printf("Enter the encrypted message: ");
+    fgets(ciphertext, MAX_LEN, stdin);
+    ciphertext[strcspn(ciphertext, "\n")] = '\0'; // Remove newline
+    
+    printf("How many top results do you want? ");
+    scanf("%d", &top_n);
+    
+    // Array to store decryption results
+    DecryptionResult results[ALPHA];
+
+    // Try all 25 shifts and score them
+    for (int shift = 1; shift < ALPHA; shift++) {
+        decrypt(ciphertext, shift, results[shift].plaintext);
+        results[shift].shift = shift;
+        results[shift].score = calculate_score(results[shift].plaintext);
+    }
+
+    // Sort results based on likelihood score
+    qsort(results, ALPHA, sizeof(DecryptionResult), compare);
+
+    // Display top results
+    printf("\nTop %d probable plaintexts:\n", top_n);
+    for (int i = 0; i < top_n && i < ALPHA; i++) {
+        printf("Shift: %2d | Score: %.2f | %s\n", results[i].shift, results[i].score, results[i].plaintext);
+    }
+
+    return 0;
+}
