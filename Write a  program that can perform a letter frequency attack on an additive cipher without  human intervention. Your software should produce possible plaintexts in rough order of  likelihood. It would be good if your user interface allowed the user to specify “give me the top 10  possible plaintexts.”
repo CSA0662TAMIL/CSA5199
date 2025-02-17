@@ -1,0 +1,83 @@
+import string
+from collections import Counter
+
+# English letter frequency (approximate frequencies for standard English text)
+ENGLISH_FREQUENCY = {
+    'E': 12.702, 'T': 9.056, 'A': 8.167, 'O': 7.507, 'I': 6.966,
+    'N': 6.749, 'S': 6.327, 'H': 6.094, 'R': 5.987, 'D': 4.253,
+    'L': 4.025, 'U': 3.636, 'C': 3.334, 'M': 3.143, 'F': 2.302,
+    'P': 2.023, 'V': 1.975, 'B': 1.492, 'K': 1.292, 'J': 0.905,
+    'X': 0.291, 'Q': 0.196, 'Z': 0.074, 'Y': 1.974
+}
+
+# Shift a character by the given number of positions (wraps around alphabet)
+def shift_char(c, shift):
+    if c.isalpha():
+        start = ord('A') if c.isupper() else ord('a')
+        return chr(start + (ord(c) - start + shift) % 26)
+    return c
+
+# Decrypt a message with a given shift
+def decrypt_with_shift(ciphertext, shift):
+    return ''.join(shift_char(c, -shift) for c in ciphertext)
+
+# Perform frequency analysis on the ciphertext
+def analyze_frequency(ciphertext):
+    # Count the frequency of each letter in the ciphertext
+    ciphertext = ''.join(c for c in ciphertext.upper() if c.isalpha())
+    letter_counts = Counter(ciphertext)
+    total_letters = sum(letter_counts.values())
+    
+    # Calculate the frequency of each letter (as percentage)
+    frequency = {letter: (count / total_letters) * 100 for letter, count in letter_counts.items()}
+    return frequency
+
+# Calculate the similarity between two frequency distributions
+def calculate_similarity(freq1, freq2):
+    # We will use a simple sum of squared differences to compare frequency distributions
+    similarity = 0
+    for letter in string.ascii_uppercase:
+        similarity += (freq1.get(letter, 0) - freq2.get(letter, 0)) ** 2
+    return similarity
+
+# Perform a letter frequency attack on an additive cipher
+def frequency_attack(ciphertext, top_n=10):
+    # Analyze the frequency of letters in the ciphertext
+    ciphertext_frequency = analyze_frequency(ciphertext)
+    
+    # Sort the ciphertext's letters by frequency (most common letters first)
+    sorted_ciphertext = sorted(ciphertext_frequency.items(), key=lambda x: x[1], reverse=True)
+    
+    # Guess that the most common letter in the ciphertext is 'E'
+    # and that we will try to map it to each letter from 'A' to 'Z'
+    possible_plaintexts = []
+    for shift in range(26):
+        # Decrypt the message with this shift
+        decrypted_text = decrypt_with_shift(ciphertext, shift)
+        
+        # Analyze the frequency of the decrypted text
+        decrypted_frequency = analyze_frequency(decrypted_text)
+        
+        # Calculate the similarity to English frequency
+        similarity = calculate_similarity(decrypted_frequency, ENGLISH_FREQUENCY)
+        
+        # Store the decrypted text and its similarity score
+        possible_plaintexts.append((decrypted_text, similarity))
+    
+    # Sort possible plaintexts by their similarity to English letter frequencies
+    possible_plaintexts.sort(key=lambda x: x[1])
+    
+    # Return the top N most likely plaintexts
+    return [plaintext for plaintext, _ in possible_plaintexts[:top_n]]
+
+# Example usage
+if __name__ == "__main__":
+    # Sample ciphertext (you can replace this with your own ciphertext)
+    ciphertext = "Uifsf jt b tfdsfu dpef!"  # This is "There is a secret code!" shifted by 1
+    
+    # Perform the frequency attack and get the top 10 possible plaintexts
+    top_10_plaintexts = frequency_attack(ciphertext, top_n=10)
+    
+    print("Top 10 possible plaintexts:")
+    for idx, plaintext in enumerate(top_10_plaintexts, 1):
+        print(f"{idx}. {plaintext}")
