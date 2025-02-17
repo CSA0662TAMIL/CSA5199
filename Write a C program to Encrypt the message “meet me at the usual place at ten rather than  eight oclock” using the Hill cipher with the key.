@@ -1,0 +1,128 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define SIZE 2
+
+// Function to map a character to a number (A=0, B=1, ..., Z=25)
+int charToNum(char ch) {
+    return toupper(ch) - 'A';
+}
+
+// Function to map a number back to a character
+char numToChar(int num) {
+    return (char)(num + 'A');
+}
+
+// Function to perform matrix multiplication modulo 26
+void matrixMultiply(int matrix[SIZE][SIZE], int vector[SIZE], int result[SIZE]) {
+    for (int i = 0; i < SIZE; i++) {
+        result[i] = 0;
+        for (int j = 0; j < SIZE; j++) {
+            result[i] += matrix[i][j] * vector[j];
+        }
+        result[i] %= 26; // Modulo 26
+    }
+}
+
+// Function to find the determinant of a 2x2 matrix modulo 26
+int determinant(int matrix[SIZE][SIZE]) {
+    return (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]) % 26;
+}
+
+// Function to find the modular inverse of a number modulo 26
+int modInverse(int num) {
+    for (int i = 1; i < 26; i++) {
+        if ((num * i) % 26 == 1) {
+            return i;
+        }
+    }
+    return -1; // No inverse found
+}
+
+// Function to find the inverse of the key matrix modulo 26
+int inverseMatrix(int matrix[SIZE][SIZE], int inverse[SIZE][SIZE]) {
+    int det = determinant(matrix);
+    int detInv = modInverse(det); // Find modular inverse of determinant
+    if (detInv == -1) {
+        return -1; // Inverse does not exist
+    }
+    // Calculate the adjugate matrix and then multiply by the inverse of the determinant modulo 26
+    inverse[0][0] = matrix[1][1] * detInv % 26;
+    inverse[0][1] = -matrix[0][1] * detInv % 26;
+    inverse[1][0] = -matrix[1][0] * detInv % 26;
+    inverse[1][1] = matrix[0][0] * detInv % 26;
+
+    // Ensure the matrix elements are positive modulo 26
+    inverse[0][0] = (inverse[0][0] + 26) % 26;
+    inverse[0][1] = (inverse[0][1] + 26) % 26;
+    inverse[1][0] = (inverse[1][0] + 26) % 26;
+    inverse[1][1] = (inverse[1][1] + 26) % 26;
+
+    return 0;
+}
+
+// Function to encrypt the message using the Hill cipher
+void encryptHill(char *plaintext, int matrix[SIZE][SIZE], char *ciphertext) {
+    int len = strlen(plaintext);
+    for (int i = 0; i < len; i += 2) {
+        // Prepare the vector for the current pair of letters
+        int vector[SIZE] = { charToNum(plaintext[i]), charToNum(plaintext[i + 1]) };
+
+        // Perform matrix multiplication to encrypt the pair
+        int result[SIZE];
+        matrixMultiply(matrix, vector, result);
+
+        // Map the result back to characters
+        ciphertext[i] = numToChar(result[0]);
+        ciphertext[i + 1] = numToChar(result[1]);
+    }
+}
+
+// Function to decrypt the ciphertext using the inverse of the Hill cipher key
+void decryptHill(char *ciphertext, int matrix[SIZE][SIZE], char *plaintext) {
+    int inverse[SIZE][SIZE];
+    if (inverseMatrix(matrix, inverse) == -1) {
+        printf("Inverse matrix not found! Decryption failed.\n");
+        return;
+    }
+
+    int len = strlen(ciphertext);
+    for (int i = 0; i < len; i += 2) {
+        // Prepare the vector for the current pair of letters
+        int vector[SIZE] = { charToNum(ciphertext[i]), charToNum(ciphertext[i + 1]) };
+
+        // Perform matrix multiplication to decrypt the pair
+        int result[SIZE];
+        matrixMultiply(inverse, vector, result);
+
+        // Map the result back to characters
+        plaintext[i] = numToChar(result[0]);
+        plaintext[i + 1] = numToChar(result[1]);
+    }
+}
+
+int main() {
+    // The key matrix
+    int keyMatrix[SIZE][SIZE] = {
+        {9, 4},
+        {5, 7}
+    };
+
+    // The plaintext message
+    char plaintext[] = "meetmeattheusualplaceattenratherthaneightoclock";
+    char ciphertext[strlen(plaintext)];
+    char decryptedText[strlen(plaintext)];
+
+    // Encrypt the plaintext
+    encryptHill(plaintext, keyMatrix, ciphertext);
+    ciphertext[strlen(plaintext)] = '\0'; // Null-terminate the ciphertext
+    printf("Encrypted message: %s\n", ciphertext);
+
+    // Decrypt the ciphertext
+    decryptHill(ciphertext, keyMatrix, decryptedText);
+    decryptedText[strlen(plaintext)] = '\0'; // Null-terminate the decrypted text
+    printf("Decrypted message: %s\n", decryptedText);
+
+    return 0;
+}
