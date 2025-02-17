@@ -1,0 +1,51 @@
+from collections import Counter
+
+def frequency_analysis(ciphertext):
+    # Count frequency of each character in the ciphertext
+    char_count = Counter(ciphertext)
+    
+    # Sort the characters by frequency (highest first)
+    sorted_char_count = char_count.most_common()
+    
+    return sorted_char_count
+
+def substitute_guesses(ciphertext, mapping):
+    # Substitute based on the provided mapping
+    plaintext = ""
+    for char in ciphertext:
+        if char in mapping:
+            plaintext += mapping[char]
+        else:
+            plaintext += char  # Keep the character unchanged if not mapped
+    return plaintext
+
+def guess_decoding(ciphertext):
+    # Step 1: Frequency analysis to find the most frequent characters
+    sorted_char_count = frequency_analysis(ciphertext)
+    
+    # Let's assume the first, second, and third most frequent characters correspond to e, t, and h
+    mapping = {}
+    
+    # Guessing e, t, and h
+    mapping[sorted_char_count[0][0]] = 'e'  # The most frequent letter is likely 'e'
+    mapping[sorted_char_count[1][0]] = 't'  # The second most frequent letter is likely 't'
+    mapping[sorted_char_count[2][0]] = 'h'  # The third most frequent letter is likely 'h'
+    
+    # Step 2: Try to guess 'the' as a common word
+    # Look for common short words like 'the', 'and', etc. 
+    # Let's assume we found 'the' in the ciphertext and mapped those letters accordingly
+    
+    # Step 3: Substitute the characters to see the results
+    deciphered_text = substitute_guesses(ciphertext, mapping)
+    
+    return deciphered_text, mapping
+
+# Example ciphertext (this would be replaced with the actual ciphertext you want to decrypt)
+ciphertext = "Wklv lv d whvw phvvdjh"
+
+# Perform decoding attempt
+deciphered_text, mapping = guess_decoding(ciphertext)
+
+print(f"Ciphertext: {ciphertext}")
+print(f"Deciphered text: {deciphered_text}")
+print(f"Character mapping: {mapping}")
