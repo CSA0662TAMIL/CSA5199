@@ -1,0 +1,83 @@
+#include <stdio.h>
+#include <stdint.h>
+
+#define BLOCK_SIZE 16   // 128-bit block size (for AES)
+#define BLOCK_SIZE_64 8 // 64-bit block size (for DES)
+
+// Constant for 128-bit block (AES) - 0x87
+#define CONSTANT_128 0x87
+
+// Constant for 64-bit block (DES) - 0x1B
+#define CONSTANT_64 0x1B
+
+// Function to print a 128-bit block in hexadecimal
+void print_block(uint8_t block[], size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        printf("%02X", block[i]);
+    }
+    printf("\n");
+}
+
+// Left shift the block by 1 bit, adding a 0 at the end
+void left_shift(uint8_t block[], size_t size) {
+    uint8_t carry = 0;  // Carry from previous bit shift
+    for (int i = size - 1; i >= 0; i--) {
+        uint8_t new_carry = block[i] >> 7;
+        block[i] = (block[i] << 1) | carry;
+        carry = new_carry;
+    }
+}
+
+// XOR the block with a constant
+void xor_with_constant(uint8_t block[], size_t size, uint8_t constant) {
+    block[0] ^= constant;
+}
+
+// CMAC Subkey Generation (128-bit or 64-bit)
+void generate_cmac_subkeys(uint8_t key[], size_t size) {
+    uint8_t K0[size];
+    uint8_t K1[size];
+    uint8_t K2[size];
+
+    // Set K0 to the result of the block cipher encryption of all-zero block
+    // For simplicity, we assume K0 is given as input (you would use AES/DES encryption here)
+    for (size_t i = 0; i < size; i++) {
+        K0[i] = key[i]; // In a real system, you would use AES/DES encryption
+    }
+
+    // Generate K1 by left shifting K0 and XORing with the constant if needed
+    memcpy(K1, K0, size);
+    left_shift(K1, size);
+    if (K1[0] & 0x80) {
+        xor_with_constant(K1, size, (size == BLOCK_SIZE ? CONSTANT_128 : CONSTANT_64));
+    }
+
+    // Generate K2 by left shifting K1 and XORing with the constant if needed
+    memcpy(K2, K1, size);
+    left_shift(K2, size);
+    if (K2[0] & 0x80) {
+        xor_with_constant(K2, size, (size == BLOCK_SIZE ? CONSTANT_128 : CONSTANT_64));
+    }
+
+    // Print the subkeys K1 and K2
+    printf("K1: ");
+    print_block(K1, size);
+    printf("K2: ");
+    print_block(K2, size);
+}
+
+int main() {
+    // Example 128-bit key for AES (block size 16 bytes)
+    uint8_t key_128[BLOCK_SIZE] = {0}; // This would be the result of AES encryption (initially 0s for simplicity)
+
+    // Example 64-bit key for DES (block size 8 bytes)
+    uint8_t key_64[BLOCK_SIZE_64] = {0}; // This would be the result of DES encryption (initially 0s for simplicity)
+
+    printf("CMAC Subkeys for 128-bit block (AES):\n");
+    generate_cmac_subkeys(key_128, BLOCK_SIZE);
+
+    printf("\nCMAC Subkeys for 64-bit block (DES):\n");
+    generate_cmac_subkeys(key_64, BLOCK_SIZE_64);
+
+    return 0;
+}
