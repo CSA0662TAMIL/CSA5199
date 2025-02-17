@@ -1,0 +1,45 @@
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+from Crypto.Random import get_random_bytes
+
+# Function to generate CBC-MAC for a single block message X
+def cbc_mac(key, X):
+    # AES block size is 16 bytes
+    cipher = AES.new(key, AES.MODE_CBC, iv=b'\x00' * 16)  # Zero IV for MAC
+    ciphertext = cipher.encrypt(pad(X.encode(), AES.block_size))
+    return ciphertext[-16:]  # The MAC is the last block of the ciphertext
+
+# Function to simulate the adversary's attack
+def adversary_attack(key, X):
+    # Step 1: Generate the MAC T for the message X
+    T = cbc_mac(key, X)
+    print(f"Original message X: {X}")
+    print(f"MAC for X (T): {T.hex()}")
+
+    # Step 2: Create a new message X || (X ⊕ T)
+    # XOR X with T (we assume that both X and T are of the same length, 16 bytes)
+    X_xor_T = bytes([a ^ b for a, b in zip(X.encode(), T)])
+    new_message = X.encode() + X_xor_T  # X || (X ⊕ T)
+
+    print(f"New message X || (X ⊕ T): {new_message.hex()}")
+
+    # Step 3: Compute CBC-MAC of the new message
+    new_mac = cbc_mac(key, new_message.decode())
+    print(f"CBC-MAC of the new message: {new_mac.hex()}")
+
+    # The result of CBC-MAC for the two-block message is the same as MAC of X
+    if new_mac == T:
+        print("Adversary successfully forged the MAC!")
+    else:
+        print("MAC verification failed for the adversary's message.")
+
+# Main function to test the attack
+def main():
+    key = get_random_bytes(16)  # AES key size (128 bits)
+    X = "This is a test message."
+
+    # Simulate CBC-MAC for the original message and attack by adversary
+    adversary_attack(key, X)
+
+if __name__ == "__main__":
+    main()
