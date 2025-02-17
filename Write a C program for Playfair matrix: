@@ -1,0 +1,49 @@
+#include <stdio.h>
+#include <string.h>
+
+#define SIZE 5
+
+void createPlayfairMatrix(char key[], char matrix[SIZE][SIZE]) {
+    char alphabet[] = "ABCDEFGHIKLMNOPQRSTUVWXYZ";
+    int keyLength = strlen(key);
+    int index = 0;
+    int used[26] = {0};
+
+    // Fill the matrix with the key
+    for (int i = 0; i < keyLength; i++) {
+        if (key[i] == 'J') key[i] = 'I'; // Replace 'J' with 'I'
+        if (!used[key[i] - 'A']) {
+            matrix[index / SIZE][index % SIZE] = key[i];
+            used[key[i] - 'A'] = 1;
+            index++;
+        }
+    }
+
+    // Fill the rest of the matrix with the remaining letters
+    for (int i = 0; i < 26; i++) {
+        if (alphabet[i] == 'J') continue; // Skip 'J'
+        if (!used[alphabet[i] - 'A']) {
+            matrix[index / SIZE][index % SIZE] = alphabet[i];
+            index++;
+        }
+    }
+}
+
+void printMatrix(char matrix[SIZE][SIZE]) {
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            printf("%c ", matrix[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+int main() {
+    char key[] = "MFHIKUNOPQZWXXYELARGDSTBC";
+    char matrix[SIZE][SIZE];
+
+    createPlayfairMatrix(key, matrix);
+    printMatrix(matrix);
+
+    return 0;
+}
