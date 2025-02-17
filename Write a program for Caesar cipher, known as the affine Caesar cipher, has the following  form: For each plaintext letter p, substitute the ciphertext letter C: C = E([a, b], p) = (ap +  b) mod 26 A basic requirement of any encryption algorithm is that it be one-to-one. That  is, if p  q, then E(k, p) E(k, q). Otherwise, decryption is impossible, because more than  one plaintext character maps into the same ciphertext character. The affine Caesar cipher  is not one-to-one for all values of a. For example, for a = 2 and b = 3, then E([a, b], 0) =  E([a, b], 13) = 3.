@@ -1,0 +1,59 @@
+# Function to find the modular inverse of a number modulo 26
+def mod_inverse(a, m):
+    for x in range(1, m):
+        if (a * x) % m == 1:
+            return x
+    return None
+
+# Function to encrypt using the Affine Cipher
+def affine_encrypt(plaintext, a, b):
+    ciphertext = ""
+    for char in plaintext:
+        if char.isalpha():
+            # Convert char to number (0-25 for 'A'-'Z')
+            p = ord(char.upper()) - ord('A')
+            # Apply the affine cipher encryption formula
+            c = (a * p + b) % 26
+            # Convert number back to character
+            ciphertext += chr(c + ord('A'))
+        else:
+            # Non-alphabetical characters remain unchanged
+            ciphertext += char
+    return ciphertext
+
+# Function to decrypt using the Affine Cipher
+def affine_decrypt(ciphertext, a, b):
+    plaintext = ""
+    a_inv = mod_inverse(a, 26)
+    if a_inv is None:
+        raise ValueError(f"No modular inverse exists for a = {a}. The value of a must be coprime with 26.")
+    
+    for char in ciphertext:
+        if char.isalpha():
+            # Convert char to number (0-25 for 'A'-'Z')
+            c = ord(char.upper()) - ord('A')
+            # Apply the affine cipher decryption formula
+            p = (a_inv * (c - b)) % 26
+            # Convert number back to character
+            plaintext += chr(p + ord('A'))
+        else:
+            # Non-alphabetical characters remain unchanged
+            plaintext += char
+    return plaintext
+
+# Example usage
+if __name__ == "__main__":
+    # Test parameters
+    a = 5  # a should be coprime with 26
+    b = 8  # b can be any integer
+    plaintext = "Hello World"
+
+    print(f"Original plaintext: {plaintext}")
+
+    # Encrypt the plaintext
+    ciphertext = affine_encrypt(plaintext, a, b)
+    print(f"Ciphertext: {ciphertext}")
+
+    # Decrypt the ciphertext
+    decrypted_text = affine_decrypt(ciphertext, a, b)
+    print(f"Decrypted plaintext: {decrypted_text}")
