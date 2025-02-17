@@ -1,0 +1,76 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Define constants
+#define STATE_SIZE 25              // 25 lanes (5x5 matrix of 64-bit lanes)
+#define LANE_SIZE 64               // Each lane is 64 bits
+#define CAPACITY_LANES 9           // 9 lanes are capacity
+#define RATE_LANES (STATE_SIZE - CAPACITY_LANES)  // 16 lanes are rate
+
+// Define the state matrix (5x5 matrix with 64-bit lanes)
+typedef uint64_t state_t[STATE_SIZE];
+
+// Function to print the current state matrix
+void print_state(state_t state) {
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+            printf("Lane (%d,%d): 0x%016llx\n", i, j, state[i*5 + j]);
+        }
+    }
+}
+
+// Function to simulate the spreading of nonzero bits in the state matrix
+int spread_nonzero_bits(state_t state) {
+    int changes = 0;
+    for (int i = 0; i < CAPACITY_LANES; i++) {
+        if (state[i] == 0) {
+            // Check the rate lanes for propagation
+            for (int j = RATE_LANES; j < STATE_SIZE; j++) {
+                if (state[j] != 0) {
+                    // Propagate the nonzero bits to the capacity lanes
+                    state[i] = 1;  // Mark the lane as nonzero
+                    changes++;
+                    break;
+                }
+            }
+        }
+    }
+    return changes;
+}
+
+int main() {
+    // Initialize state matrix (5x5 lanes, 64 bits each)
+    state_t state = {0};
+
+    // Set the rate lanes to nonzero (at least one nonzero bit in each lane)
+    // For simplicity, we'll just set the first rate lane to a nonzero value
+    for (int i = 0; i < RATE_LANES; i++) {
+        state[i] = 1;  // Assigning at least one nonzero bit to the rate lanes
+    }
+
+    // Keep track of how long it takes for all the capacity lanes to have at least one nonzero bit
+    int steps = 0;
+    int all_nonzero = 0;
+    
+    // Simulate the process of spreading nonzero bits
+    while (!all_nonzero) {
+        steps++;
+        
+        // Spread the nonzero bits
+        spread_nonzero_bits(state);
+        
+        // Check if all capacity lanes are nonzero
+        all_nonzero = 1;
+        for (int i = 0; i < CAPACITY_LANES; i++) {
+            if (state[i] == 0) {
+                all_nonzero = 0;
+                break;
+            }
+        }
+    }
+
+    printf("It took %d steps for all capacity lanes to have at least one nonzero bit.\n", steps);
+    return 0;
+}
