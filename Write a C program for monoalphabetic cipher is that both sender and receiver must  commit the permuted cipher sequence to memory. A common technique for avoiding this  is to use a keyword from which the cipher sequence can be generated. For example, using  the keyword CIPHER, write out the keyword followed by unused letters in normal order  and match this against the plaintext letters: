@@ -1,0 +1,65 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+// Function to generate the cipher alphabet based on the keyword
+void generateCipherAlphabet(char keyword[], char cipher[]) {
+    int i, j = 0;
+    int used[26] = {0}; // To keep track of used letters in the cipher
+
+    // First, add the letters from the keyword to the cipher
+    for (i = 0; i < strlen(keyword); i++) {
+        char ch = toupper(keyword[i]);
+        if (!used[ch - 'A']) {
+            cipher[j++] = ch;
+            used[ch - 'A'] = 1;
+        }
+    }
+
+    // Then add the remaining letters of the alphabet to the cipher
+    for (i = 0; i < 26; i++) {
+        if (!used[i]) {
+            cipher[j++] = 'A' + i;
+        }
+    }
+    cipher[j] = '\0'; // Null terminate the cipher string
+}
+
+// Function to encrypt the plaintext using the generated cipher
+void encryptMessage(char plaintext[], char cipher[], char encrypted[]) {
+    int i;
+    for (i = 0; i < strlen(plaintext); i++) {
+        char ch = toupper(plaintext[i]);
+        
+        if (ch >= 'A' && ch <= 'Z') { // Only encrypt letters
+            encrypted[i] = cipher[ch - 'A']; // Substitute with the cipher letter
+        } else {
+            encrypted[i] = plaintext[i]; // Non-letter characters remain unchanged
+        }
+    }
+    encrypted[i] = '\0'; // Null terminate the encrypted string
+}
+
+int main() {
+    char keyword[] = "CIPHER";
+    char cipher[26]; // The cipher alphabet
+    char plaintext[100], encrypted[100];
+
+    // Generate the cipher alphabet based on the keyword
+    generateCipherAlphabet(keyword, cipher);
+
+    // Display the generated cipher alphabet
+    printf("Generated Cipher Alphabet: %s\n", cipher);
+
+    // Get the plaintext message from the user
+    printf("Enter the plaintext message: ");
+    fgets(plaintext, sizeof(plaintext), stdin);
+
+    // Encrypt the message
+    encryptMessage(plaintext, cipher, encrypted);
+
+    // Display the encrypted message
+    printf("Encrypted message: %s\n", encrypted);
+
+    return 0;
+}
