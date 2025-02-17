@@ -1,0 +1,112 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define SIZE 2
+
+// Function to map a character to a number (A=0, B=1, ..., Z=25)
+int charToNum(char ch) {
+    return toupper(ch) - 'A';
+}
+
+// Function to map a number back to a character
+char numToChar(int num) {
+    return (char)(num + 'A');
+}
+
+// Function to perform matrix multiplication modulo 26
+void matrixMultiply(int matrix[SIZE][SIZE], int vector[SIZE], int result[SIZE]) {
+    for (int i = 0; i < SIZE; i++) {
+        result[i] = 0;
+        for (int j = 0; j < SIZE; j++) {
+            result[i] += matrix[i][j] * vector[j];
+        }
+        result[i] %= 26; // Modulo 26
+    }
+}
+
+// Function to find the determinant of a 2x2 matrix modulo 26
+int determinant(int matrix[SIZE][SIZE]) {
+    return (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]) % 26;
+}
+
+// Function to find the modular inverse of a number modulo 26
+int modInverse(int num) {
+    for (int i = 1; i < 26; i++) {
+        if ((num * i) % 26 == 1) {
+            return i;
+        }
+    }
+    return -1; // No inverse found
+}
+
+// Function to find the inverse of the key matrix modulo 26
+int inverseMatrix(int matrix[SIZE][SIZE], int inverse[SIZE][SIZE]) {
+    int det = determinant(matrix);
+    int detInv = modInverse(det); // Find modular inverse of determinant
+    if (detInv == -1) {
+        return -1; // Inverse does not exist
+    }
+    // Calculate the adjugate matrix and then multiply by the inverse of the determinant modulo 26
+    inverse[0][0] = matrix[1][1] * detInv % 26;
+    inverse[0][1] = -matrix[0][1] * detInv % 26;
+    inverse[1][0] = -matrix[1][0] * detInv % 26;
+    inverse[1][1] = matrix[0][0] * detInv % 26;
+
+    // Ensure the matrix elements are positive modulo 26
+    inverse[0][0] = (inverse[0][0] + 26) % 26;
+    inverse[0][1] = (inverse[0][1] + 26) % 26;
+    inverse[1][0] = (inverse[1][0] + 26) % 26;
+    inverse[1][1] = (inverse[1][1] + 26) % 26;
+
+    return 0;
+}
+
+// Function to extract the key matrix from the known plaintext and ciphertext
+int getKeyFromPlaintextCiphertext(char *plaintext, char *ciphertext, int key[SIZE][SIZE]) {
+    int P[SIZE][SIZE], C[SIZE][SIZE];
+    int i;
+
+    // Convert plaintext and ciphertext to numeric vectors (A=0, ..., Z=25)
+    for (i = 0; i < SIZE; i++) {
+        P[0][i] = charToNum(plaintext[i]);
+        P[1][i] = charToNum(plaintext[i + 1]);
+        C[0][i] = charToNum(ciphertext[i]);
+        C[1][i] = charToNum(ciphertext[i + 1]);
+    }
+
+    // Calculate the inverse of the plaintext matrix
+    int P_inv[SIZE][SIZE];
+    if (inverseMatrix(P, P_inv) == -1) {
+        printf("Inverse of the plaintext matrix not found! Attack failed.\n");
+        return -1;
+    }
+
+    // Calculate the key matrix K = C * P^-1 (mod 26)
+    int temp[SIZE], result[SIZE];
+    for (i = 0; i < SIZE; i++) {
+        matrixMultiply(P_inv, C[i], result); // Multiply by the inverse of P
+        for (int j = 0; j < SIZE; j++) {
+            key[i][j] = result[j]; // Fill in the key matrix
+        }
+    }
+
+    return 0;
+}
+
+int main() {
+    char plaintext[] = "ME";  // Known plaintext (pair of letters)
+    char ciphertext[] = "RK";  // Corresponding ciphertext
+    int key[SIZE][SIZE];
+
+    // Derive the key from known plaintext and ciphertext
+    if (getKeyFromPlaintextCiphertext(plaintext, ciphertext, key) == 0) {
+        printf("Key matrix derived from known plaintext attack:\n");
+        printf("%d %d\n", key[0][0], key[0][1]);
+        printf("%d %d\n", key[1][0], key[1][1]);
+    } else {
+        printf("Failed to derive the key.\n");
+    }
+
+    return 0;
+}
