@@ -1,0 +1,81 @@
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+from Crypto.Random import get_random_bytes
+import os
+
+# Function to print ciphertext and plaintext in hex
+def print_hex(data):
+    return ' '.join([f'{x:02x}' for x in data])
+
+# ECB Mode
+def ecb_encrypt_decrypt(plaintext, key, mode='encrypt'):
+    cipher = AES.new(key, AES.MODE_ECB)
+    
+    # Pad plaintext to ensure it is a multiple of block size (AES block size is 16 bytes)
+    if mode == 'encrypt':
+        plaintext = pad(plaintext.encode(), AES.block_size)  # Pad the plaintext
+        ciphertext = cipher.encrypt(plaintext)
+        print(f"Ciphertext (ECB): {print_hex(ciphertext)}")
+        return ciphertext
+    elif mode == 'decrypt':
+        decrypted_data = cipher.decrypt(plaintext)
+        decrypted_data = unpad(decrypted_data, AES.block_size)  # Unpad the ciphertext
+        print(f"Decrypted plaintext (ECB): {decrypted_data.decode()}")
+        return decrypted_data
+
+# CBC Mode
+def cbc_encrypt_decrypt(plaintext, key, iv, mode='encrypt'):
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    
+    # Pad plaintext to ensure it is a multiple of block size
+    if mode == 'encrypt':
+        plaintext = pad(plaintext.encode(), AES.block_size)  # Pad the plaintext
+        ciphertext = cipher.encrypt(plaintext)
+        print(f"Ciphertext (CBC): {print_hex(ciphertext)}")
+        return ciphertext
+    elif mode == 'decrypt':
+        decrypted_data = cipher.decrypt(plaintext)
+        decrypted_data = unpad(decrypted_data, AES.block_size)  # Unpad the ciphertext
+        print(f"Decrypted plaintext (CBC): {decrypted_data.decode()}")
+        return decrypted_data
+
+# CFB Mode (CFB-128)
+def cfb_encrypt_decrypt(plaintext, key, iv, mode='encrypt'):
+    cipher = AES.new(key, AES.MODE_CFB, iv)
+    
+    # No padding is needed for CFB, as CFB operates in a stream-like fashion
+    if mode == 'encrypt':
+        ciphertext = cipher.encrypt(plaintext.encode())
+        print(f"Ciphertext (CFB): {print_hex(ciphertext)}")
+        return ciphertext
+    elif mode == 'decrypt':
+        decrypted_data = cipher.decrypt(plaintext)
+        print(f"Decrypted plaintext (CFB): {decrypted_data.decode()}")
+        return decrypted_data
+
+# Main function to test the encryption and decryption modes
+def main():
+    key = get_random_bytes(16)  # AES key size (16 bytes = 128 bits)
+    iv = get_random_bytes(16)   # Initialization vector for CBC and CFB
+    
+    plaintext = "This is a test message."
+
+    print("Original Plaintext:", plaintext)
+
+    # ECB Encryption and Decryption
+    print("\n--- ECB Mode ---")
+    ciphertext_ecb = ecb_encrypt_decrypt(plaintext, key, mode='encrypt')
+    ecb_encrypt_decrypt(ciphertext_ecb, key, mode='decrypt')
+
+    # CBC Encryption and Decryption
+    print("\n--- CBC Mode ---")
+    ciphertext_cbc = cbc_encrypt_decrypt(plaintext, key, iv, mode='encrypt')
+    cbc_encrypt_decrypt(ciphertext_cbc, key, iv, mode='decrypt')
+
+    # CFB Encryption and Decryption
+    print("\n--- CFB Mode ---")
+    ciphertext_cfb = cfb_encrypt_decrypt(plaintext, key, iv, mode='encrypt')
+    cfb_encrypt_decrypt(ciphertext_cfb, key, iv, mode='decrypt')
+
+if __name__ == "__main__":
+    main()
