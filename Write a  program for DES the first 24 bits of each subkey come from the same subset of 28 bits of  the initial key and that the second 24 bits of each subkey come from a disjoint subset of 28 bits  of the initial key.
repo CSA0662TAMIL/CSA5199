@@ -1,0 +1,60 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+
+// Function to perform a circular left shift on a 28-bit number
+uint32_t left_shift(uint32_t half_key, int shifts) {
+    return ((half_key << shifts) | (half_key >> (28 - shifts))) & 0xFFFFFFF;
+}
+
+// Function to perform a permutation on the key (placeholder for PC-2)
+uint64_t apply_pc2(uint64_t key) {
+    // Apply PC-2 (permutation for generating 48-bit subkey)
+    // Placeholder for actual PC-2 permutation (for simplicity, we'll skip the real table)
+    // You'd normally use a permutation table here.
+    return key;  // For simplicity, just return the key as-is
+}
+
+// Function to generate the subkeys using the custom method
+void key_generation(uint64_t key, uint64_t *keys) {
+    // Step 1: Initial permutation (PC-1)
+    // In this simplified example, we assume the initial key is already correctly permuted.
+    // In a real implementation, you would apply the PC-1 table here.
+    
+    // Split the 56-bit key into two 28-bit halves
+    uint32_t left = (key >> 28) & 0xFFFFFFF;
+    uint32_t right = key & 0xFFFFFFF;
+    
+    // Step 2: Key schedule generation for 16 rounds
+    for (int round = 0; round < 16; round++) {
+        // Shift the two halves (using different shift values for each round)
+        left = left_shift(left, round % 2 + 1);  // Simplified shifting rule
+        right = left_shift(right, round % 2 + 1);  // Simplified shifting rule
+        
+        // Construct the 48-bit subkey by combining the left and right halves
+        uint64_t subkey = ((uint64_t)left << 28) | right;
+        
+        // Step 3: Apply the PC-2 permutation to generate the final 48-bit subkey
+        keys[round] = apply_pc2(subkey);  // Apply the PC-2 table (this is a placeholder)
+    }
+}
+
+// Function to print the generated subkeys in binary
+void print_keys(uint64_t *keys) {
+    for (int i = 0; i < 16; i++) {
+        printf("Subkey %d: 0x%016llx\n", i + 1, keys[i]);
+    }
+}
+
+int main() {
+    uint64_t key = 0x133457799BBCDFF1;  // Example 56-bit key (could be 64 bits, but 8 bits are parity)
+    uint64_t keys[16];  // Store the 16 subkeys
+    
+    // Generate the subkeys
+    key_generation(key, keys);
+    
+    // Print the generated subkeys
+    print_keys(keys);
+    
+    return 0;
+}
