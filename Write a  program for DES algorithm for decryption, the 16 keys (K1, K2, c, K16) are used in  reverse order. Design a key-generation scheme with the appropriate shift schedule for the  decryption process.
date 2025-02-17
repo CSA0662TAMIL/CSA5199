@@ -1,0 +1,93 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+
+#define DES_BLOCK_SIZE 8  // 64 bits (8 bytes)
+
+// Permutation and S-boxes (you will need to define these)
+// These values are provided by the DES standard.
+
+// Example substitution table, key schedule, and other DES constants 
+// should be included here, such as PC-1, PC-2, E, S-boxes, etc.
+
+// DES decryption function (using 16 round keys in reverse)
+void des_decrypt(uint64_t ciphertext, uint64_t *keys, uint64_t *plaintext) {
+    // Split the ciphertext into two 32-bit halves
+    uint32_t left = (ciphertext >> 32) & 0xFFFFFFFF;
+    uint32_t right = ciphertext & 0xFFFFFFFF;
+    
+    // For each of the 16 rounds, apply the corresponding key (reversed)
+    for (int round = 15; round >= 0; round--) {
+        uint32_t round_key = keys[round];
+        
+        // Apply the Feistel function using the round key
+        uint32_t new_right = left ^ round_key;  // Feistel function (simplified example)
+        
+        // Swap the halves for the next round
+        left = right;
+        right = new_right;
+    }
+    
+    // Combine the two halves to get the decrypted block
+    *plaintext = ((uint64_t)left << 32) | right;
+}
+
+// Key generation function to produce 16 keys (K1, K2, ..., K16)
+void key_generation(uint64_t key, uint64_t *keys) {
+    // Perform the initial permutation (PC-1)
+    key = permute_key(key);  // Apply PC-1 to the key
+    
+    // Split the key into two 28-bit halves
+    uint32_t left = (key >> 28) & 0xFFFFFFF;
+    uint32_t right = key & 0xFFFFFFF;
+    
+    // Generate the 16 round keys using the shifting schedule
+    for (int i = 0; i < 16; i++) {
+        left = shift_left(left);   // Apply left shift
+        right = shift_left(right); // Apply left shift
+        
+        // Combine the halves and apply PC-2 to generate the round key
+        keys[i] = apply_pc2((left << 28) | right);  // Apply PC-2 to the combined key
+    }
+}
+
+// Apply initial permutation (PC-1) to the key
+uint64_t permute_key(uint64_t key) {
+    // Implement the permutation logic for PC-1
+    // This is a fixed table, and the key is permuted accordingly
+    // (For simplicity, we assume this function is implemented elsewhere)
+    return key;
+}
+
+// Apply PC-2 permutation to get the round key
+uint64_t apply_pc2(uint64_t key) {
+    // Implement the PC-2 permutation logic (this is a fixed table)
+    return key;
+}
+
+// Shift a 28-bit half of the key
+uint32_t shift_left(uint32_t half_key) {
+    // Left shift the half by 1 (with wrapping)
+    return (half_key << 1) | (half_key >> 27);
+}
+
+// Example of using the decryption process
+int main() {
+    uint64_t ciphertext = 0x133457799BBCDFF1; // Example ciphertext (64-bit)
+    uint64_t key = 0x0101010101010101; // Example 64-bit key
+    
+    // Store the 16 keys generated from the original key
+    uint64_t keys[16];
+    
+    // Generate the round keys for decryption
+    key_generation(key, keys);
+    
+    // Decrypt the ciphertext using the generated keys
+    uint64_t plaintext;
+    des_decrypt(ciphertext, keys, &plaintext);
+    
+    // Print the result
+    printf("Decrypted plaintext: 0x%016llx\n", plaintext);
+    
+    return 0;
+}
